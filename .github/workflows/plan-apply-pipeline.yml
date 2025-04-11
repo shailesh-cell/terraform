@@ -10,63 +10,49 @@ permissions:
   contents: read
 
 jobs:
-  detect-changes:
+  detect-submodules:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - id: set-matrix
         run: |
-          echo "Detecting changed Terraform module directories..."
-
-          # Try detecting changed subfolders with .tf files under _modules
-          CHANGED_DIRS=$(git diff HEAD^ HEAD --name-only -- '*.tf' | grep '^_modules/' | xargs -n1 dirname | sort -u || true)
-
-          if [ -z "$CHANGED_DIRS" ]; then
-            echo "No changes detected. Fallback: detect all modules."
-
-            # Detect all folders under _modules that contain .tf files
-            ALL_DIRS=$(find _modules -type f -name "*.tf" -exec dirname {} \; | sort -u)
-            DIR_LIST="$ALL_DIRS"
-          else
-            DIR_LIST="$CHANGED_DIRS"
-          fi
-
-          # Convert list to JSON matrix
+          DIRS=$(find terraform/_modules -mindepth 1 -maxdepth 1 -type d)
           MATRIX_JSON="["
-          for dir in $DIR_LIST; do
+          for dir in $DIRS; do
             MATRIX_JSON+="{\"directoryPath\":\"$dir\"},"
           done
-          MATRIX_JSON="${MATRIX_JSON%,}"  # Remove trailing comma
+          MATRIX_JSON="${MATRIX_JSON%,}]"
           MATRIX_JSON+="]"
-
           echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
-          echo "Matrix: $MATRIX_JSON"
+          echo "Detected modules: $MATRIX_JSON"
 
   terraform-plan:
-    needs: detect-changes
+    needs: detect-submodules
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        include: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
+        include: ${{ fromJson(needs.detect-submodules.outputs.matrix) }}
 
     defaults:
       run:
         working-directory: ${{ matrix.directoryPath }}
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: latest
+
       - uses: azure/login@v1
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
       - run: terraform init
       - run: terraform validate
       - run: terraform plan
