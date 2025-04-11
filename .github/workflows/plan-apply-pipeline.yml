@@ -24,10 +24,10 @@ jobs:
       - name: Detect Changed Terraform Directories
         id: set-matrix
         run: |
-          CHANGED_DIRS=$(git diff HEAD^ HEAD --name-only -- '*.tf' | grep -v '^_modules/' | awk -F'/' 'NF > 1 {print $1}' | sort | uniq)
+          CHANGED_DIRS=$(git diff HEAD^ HEAD --name-only -- '*.tf' | xargs -n1 dirname | sort | uniq)
 
           if [ -z "$CHANGED_DIRS" ]; then
-            echo "No .tf changes found. Using default matrix."
+            echo "No .tf changes found. Using default directory."
             MATRIX_JSON='[{"directoryPath":"."}]'
           else
             MATRIX_JSON="["
@@ -46,8 +46,7 @@ jobs:
     needs: detect-changes
     runs-on: ubuntu-latest
     strategy:
-      matrix:
-        include: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
+      matrix: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
     defaults:
       run:
         working-directory: ${{ matrix.directoryPath }}
@@ -66,6 +65,11 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Debug Working Directory
+        run: |
+          echo "PWD: $(pwd)"
+          ls -la
 
       - name: Terraform Init
         run: terraform init
