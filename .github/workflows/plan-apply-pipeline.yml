@@ -27,20 +27,19 @@ jobs:
           CHANGED_DIRS=$(git diff origin/main HEAD --name-only -- '*.tf' | grep -v '^_modules/' | awk -F'/' 'NF > 1 {print $1}' | sort | uniq)
           echo "Changed directories: $CHANGED_DIRS"
 
-          MATRIX_JSON="{"
           if [ -z "$CHANGED_DIRS" ]; then
-            # No .tf changes, default to root directory (.)
-            MATRIX_JSON+="\"default\":{\"directoryPath\":\".\"}"
+            MATRIX_JSON="{\"default\": {\"directoryPath\": \".\"}}"
           else
+            MATRIX_JSON="{"
             for dir in $CHANGED_DIRS; do
               MATRIX_JSON+="\"$dir\":{\"directoryPath\":\"$dir\"},"
             done
             MATRIX_JSON="${MATRIX_JSON%,}"
+            MATRIX_JSON+="}"
           fi
-          MATRIX_JSON+="}"
 
-          echo "Final matrix: $MATRIX_JSON"
           echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
+          echo "Final matrix: $MATRIX_JSON"
 
   terraform-plan:
     name: Terraform Plan
