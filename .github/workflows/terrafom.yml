@@ -27,11 +27,15 @@ jobs:
 
       - name: Loop through each module and plan
         run: |
-          for dir in terraform/_modules/*; do
+          for dir in terraform/_modules/*/; do
+           if [ -d "$dir" ]; then
             echo "Running Terraform in $dir"
             cd "$dir"
             terraform init
             terraform validate
             terraform plan
             cd - > /dev/null
+           else
+            echo "No modules found in terraform/_modules/"
+           fi
           done
