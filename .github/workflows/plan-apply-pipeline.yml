@@ -39,7 +39,7 @@ jobs:
           fi
 
   terraform-plan:
-    if: needs.detect-changes.outputs.matrix != '[]'
+    #if: needs.detect-changes.outputs.matrix != '[]'
     needs: detect-changes
     runs-on: ubuntu-latest
     strategy:
