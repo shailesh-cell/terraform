@@ -41,7 +41,8 @@ jobs:
     needs: detect-changes
     runs-on: ubuntu-latest
     strategy:
-      matrix: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
+      matrix: 
+        include: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
     defaults:
       run:
         working-directory: ${{ matrix.directoryPath }}
