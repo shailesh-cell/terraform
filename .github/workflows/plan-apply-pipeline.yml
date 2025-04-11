@@ -21,16 +21,21 @@ jobs:
 
       - id: set-matrix
         run: |
-          CHANGED_DIRS=$(git diff HEAD^ HEAD --name-only -- '*.tf' | xargs -n1 dirname | sort | uniq)
+          CHANGED_DIRS=$(git diff HEAD^ HEAD --name-only -- '*.tf' | grep '^_modules/' | xargs -n1 dirname | sort | uniq)
 
           if [ -z "$CHANGED_DIRS" ]; then
-            MATRIX_JSON='["."]'
+            echo "No .tf changes found. Skipping matrix."
+            echo "matrix=[]" >> $GITHUB_OUTPUT            
           else
-            MATRIX_JSON=$(printf '"%s"\n' $CHANGED_DIRS | jq -R . | jq -s .)
+            MATRIX_JSON="["
+            for dir in $CHANGED_DIRS; do
+              MATRIX_JSON+="{\"directoryPath\":\"$dir\"},"
+            done
+            MATRIX_JSON="${MATRIX_JSON%,}"  # remove trailing comma
+            MATRIX_JSON+="]"
+            echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
+            echo "Matrix: $MATRIX_JSON"
           fi
-
-          echo "matrix={\"directory\": $MATRIX_JSON}" >> $GITHUB_OUTPUT
-          echo "Final matrix: {\"directory\": $MATRIX_JSON}"
 
   terraform-plan:
     needs: detect-changes
