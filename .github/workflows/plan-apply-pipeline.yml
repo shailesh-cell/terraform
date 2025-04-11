@@ -24,28 +24,26 @@ jobs:
           CHANGED_DIRS=$(git diff HEAD^ HEAD --name-only -- '*.tf' | grep '^_modules/' || true)
 
           if [ -z "$CHANGED_DIRS" ]; then
-            echo "No .tf changes found. Skipping matrix."
-            echo "matrix=[]" >> $GITHUB_OUTPUT
+            echo "No .tf changes found. Using default module."
+            echo 'matrix=[{"directoryPath":"terraform/_modules/your_module"}]' >> $GITHUB_OUTPUT
           else
             DIR_LIST=$(echo "$CHANGED_DIRS" | xargs -n1 dirname | sort | uniq)
             MATRIX_JSON="["
             for dir in $DIR_LIST; do
               MATRIX_JSON+="{\"directoryPath\":\"$dir\"},"
             done
-            MATRIX_JSON="${MATRIX_JSON%,}"  # remove trailing comma
+            MATRIX_JSON="${MATRIX_JSON%,}"
             MATRIX_JSON+="]"
             echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
             echo "Matrix: $MATRIX_JSON"
           fi
 
   terraform-plan:
-    #if: needs.detect-changes.outputs.matrix != '[]'
     needs: detect-changes
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        include: ${{ fromJson(needs.detect-changes.outputs.matrix || '[{"directoryPath":"terraform/_modules/your_module"}]') }}
-
+        include: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
     defaults:
       run:
         working-directory: ${{ matrix.directoryPath }}
