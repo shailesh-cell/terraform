@@ -11,6 +11,7 @@ permissions:
 
 jobs:
   detect-changes:
+    name: Detect Changed Terraform Directories
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
@@ -27,24 +28,26 @@ jobs:
 
           if [ -z "$CHANGED_DIRS" ]; then
             echo "No .tf changes found. Using default matrix."
-            MATRIX_JSON='{"default":{"directoryPath":"."}}'
+            MATRIX_JSON='[{"directoryPath":"."}]'
           else
-            MATRIX_JSON="{"
+            MATRIX_JSON="["
             for dir in $CHANGED_DIRS; do
-              MATRIX_JSON+="\"$dir\":{\"directoryPath\":\"$dir\"},"
+              MATRIX_JSON+="{\"directoryPath\":\"$dir\"},"
             done
-            MATRIX_JSON="${MATRIX_JSON%,}" # Remove trailing comma
-            MATRIX_JSON+="}"
+            MATRIX_JSON="${MATRIX_JSON%,}" # remove trailing comma
+            MATRIX_JSON+="]"
           fi
 
-          echo "matrix=${MATRIX_JSON}" >> $GITHUB_OUTPUT
-          echo "Matrix for Terraform Plan: $MATRIX_JSON"
+          echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
+          echo "Matrix: $MATRIX_JSON"
 
   terraform-plan:
+    name: Terraform Plan
     needs: detect-changes
     runs-on: ubuntu-latest
     strategy:
-      matrix: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
+      matrix:
+        include: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
     defaults:
       run:
         working-directory: ${{ matrix.directoryPath }}
