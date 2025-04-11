@@ -28,18 +28,23 @@ jobs:
           echo "Changed directories: $CHANGED_DIRS"
 
           MATRIX_JSON="{"
-          for dir in $CHANGED_DIRS; do
-            MATRIX_JSON+="\"$dir\":{\"directoryPath\":\"$dir\"},"
-          done
-          MATRIX_JSON="${MATRIX_JSON%,}"
+          if [ -z "$CHANGED_DIRS" ]; then
+            # No .tf changes, default to root directory (.)
+            MATRIX_JSON+="\"default\":{\"directoryPath\":\".\"}"
+          else
+            for dir in $CHANGED_DIRS; do
+              MATRIX_JSON+="\"$dir\":{\"directoryPath\":\"$dir\"},"
+            done
+            MATRIX_JSON="${MATRIX_JSON%,}"
+          fi
           MATRIX_JSON+="}"
 
+          echo "Final matrix: $MATRIX_JSON"
           echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
 
   terraform-plan:
     name: Terraform Plan
     needs: detect-changes
-    if: needs.detect-changes.outputs.matrix != '{}'
     runs-on: ubuntu-latest
     strategy:
       matrix: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
@@ -70,5 +75,3 @@ jobs:
 
       - name: Terraform Plan
         run: terraform plan
-
-      # ❌ No apply step included intentionally
