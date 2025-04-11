@@ -4,10 +4,10 @@ on:
   push:
     branches:
       - main
+
 permissions:
   id-token: write
   contents: read
-  actions: read
 
 jobs:
   detect-changes:
@@ -16,15 +16,14 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Detect changed Terraform directories
+      - name: Detect Changed Terraform Directories
         id: set-matrix
         run: |
-          echo "Detecting .tf file changes..."
           CHANGED_DIRS=$(git diff origin/main HEAD --name-only -- '*.tf' | grep -v '^_modules/' | awk -F'/' 'NF > 1 {print $1}' | sort | uniq)
           echo "Changed directories: $CHANGED_DIRS"
 
@@ -35,7 +34,6 @@ jobs:
           MATRIX_JSON="${MATRIX_JSON%,}"
           MATRIX_JSON+="}"
 
-          echo "Matrix JSON: $MATRIX_JSON"
           echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
 
   terraform-plan:
@@ -49,8 +47,13 @@ jobs:
       run:
         working-directory: ${{ matrix.directoryPath }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: latest
 
       - name: Azure Login via OIDC
         uses: azure/login@v1
@@ -58,11 +61,6 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: latest
 
       - name: Terraform Init
         run: terraform init
@@ -73,4 +71,4 @@ jobs:
       - name: Terraform Plan
         run: terraform plan
 
-      # ⚠️ NO apply step here!
+      # ❌ No apply step included intentionally
