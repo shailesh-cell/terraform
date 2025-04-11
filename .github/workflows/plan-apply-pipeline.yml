@@ -44,7 +44,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        include: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
+        include: ${{ fromJson(needs.detect-changes.outputs.matrix || '[{"directoryPath":"terraform/_modules/your_module"}]') }}
+
     defaults:
       run:
         working-directory: ${{ matrix.directoryPath }}
