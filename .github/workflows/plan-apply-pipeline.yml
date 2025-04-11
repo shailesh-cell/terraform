@@ -1,0 +1,76 @@
+name: Terraform Plan Workflow
+
+on:
+  push:
+    branches:
+      - main
+permissions:
+  id-token: write
+  contents: read
+  actions: read
+
+jobs:
+  detect-changes:
+    name: Detect Changed Terraform Directories
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed Terraform directories
+        id: set-matrix
+        run: |
+          echo "Detecting .tf file changes..."
+          CHANGED_DIRS=$(git diff origin/main HEAD --name-only -- '*.tf' | grep -v '^_modules/' | awk -F'/' 'NF > 1 {print $1}' | sort | uniq)
+          echo "Changed directories: $CHANGED_DIRS"
+
+          MATRIX_JSON="{"
+          for dir in $CHANGED_DIRS; do
+            MATRIX_JSON+="\"$dir\":{\"directoryPath\":\"$dir\"},"
+          done
+          MATRIX_JSON="${MATRIX_JSON%,}"
+          MATRIX_JSON+="}"
+
+          echo "Matrix JSON: $MATRIX_JSON"
+          echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
+
+  terraform-plan:
+    name: Terraform Plan
+    needs: detect-changes
+    if: needs.detect-changes.outputs.matrix != '{}'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
+    defaults:
+      run:
+        working-directory: ${{ matrix.directoryPath }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Azure Login via OIDC
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: latest
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan
+
+      # ⚠️ NO apply step here!
