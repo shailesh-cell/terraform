@@ -27,7 +27,7 @@ jobs:
             echo "No .tf changes found. Skipping matrix."
             echo "matrix=[]" >> $GITHUB_OUTPUT            
           else
-            MATRIX_JSON="["
+            MATRIX_JSON="["        
             for dir in $CHANGED_DIRS; do
               MATRIX_JSON+="{\"directoryPath\":\"$dir\"},"
             done
@@ -35,28 +35,27 @@ jobs:
             MATRIX_JSON+="]"
             echo "matrix=$MATRIX_JSON" >> $GITHUB_OUTPUT
             echo "Matrix: $MATRIX_JSON"
-          fi
 
   terraform-plan:
-  if: needs.detect-changes.outputs.matrix != '[]'
-  needs: detect-changes
-  runs-on: ubuntu-latest
-  strategy:
-    matrix:
-      include: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
-  defaults:
-    run:
-      working-directory: ${{ matrix.directoryPath }}
-  steps:
-    - uses: actions/checkout@v4
-    - uses: hashicorp/setup-terraform@v3
-      with:
-        terraform_version: latest
-    - uses: azure/login@v1
-      with:
-        client-id: ${{ secrets.AZURE_CLIENT_ID }}
-        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-    - run: terraform init
-    - run: terraform validate
-    - run: terraform plan
+    if: needs.detect-changes.outputs.matrix != '[]'  # ✅ Correctly indented
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
+    defaults:
+      run:
+        working-directory: ${{ matrix.directoryPath }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: latest
+      - uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - run: terraform init
+      - run: terraform validate
+      - run: terraform plan
