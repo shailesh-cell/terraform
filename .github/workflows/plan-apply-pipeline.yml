@@ -24,10 +24,12 @@ jobs:
       - name: Detect Changed Terraform Directories
         id: set-matrix
         run: |
-          CHANGED_DIRS=$(git diff origin/main HEAD --name-only -- '*.tf' | grep -v '^_modules/' | awk -F'/' 'NF > 1 {print $1}' | sort | uniq)
+          CHANGED_DIRS=$(git diff HEAD^ HEAD --name-only -- '*.tf' | grep -v '^_modules/' | awk -F'/' 'NF > 1 {print $1}' | sort | uniq)
+
           echo "Changed directories: $CHANGED_DIRS"
 
           if [ -z "$CHANGED_DIRS" ]; then
+            echo '::notice ::No Terraform changes detected.'
             MATRIX_JSON="{\"default\": {\"directoryPath\": \".\"}}"
           else
             MATRIX_JSON="{"
