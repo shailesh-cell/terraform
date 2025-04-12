@@ -32,7 +32,7 @@ variable "product" {
 }
 }
 
-variable "resource_group" {
+variable "resource_groups" {
  description = "List of short names to build resouce groups."
  type = list(string)
 }
