@@ -35,13 +35,14 @@ jobs:
           echo "$TF_FILES" | while read -r file; do
             echo "- $file"
           done
-          # Convert to JSON array for output
-          JSON_FILES=$(echo "$TF_FILES" | jq -R . | jq -s .)
+          # Convert to clean JSON array
+          JSON_FILES=$(echo "$TF_FILES" | jq -R '[.]' | jq -s 'add')
           echo "tf_files=$JSON_FILES" >> $GITHUB_OUTPUT
         shell: bash
 
   find_dirs:
     runs-on: ubuntu-latest
+    needs: check_tf_files
     outputs:
       matrix: ${{ steps.find_dirs.outputs.matrix }}
       has_dirs: ${{ steps.find_dirs.outputs.has_dirs }}
@@ -53,6 +54,7 @@ jobs:
         id: find_dirs
         run: |
           set -e
+          # Find top-level directories with .tf files, excluding _modules
           TF_DIRS=$(find . -maxdepth 1 -type d -not -path '.' -not -path './_modules' -not -path './_modules/*' | sort)
           echo "Found directories: $TF_DIRS"
           if [ -z "$TF_DIRS" ]; then
@@ -164,7 +166,7 @@ jobs:
   tf_plan:
     runs-on: ubuntu-latest
     needs: [check_tf_files, find_dirs, check_changes]
-    if: ${{ needs.find_dirs.outputs.has_dirs == 'true' }}
+    if: ${{ needs.find_dirs.outputs.has_dirs == 'true' && needs.check_changes.outputs.has_changes == 'true' }}
     strategy:
       matrix:
         directoryPath: ${{ fromJson(needs.check_changes.outputs.matrix) }}

@@ -17,7 +17,7 @@ locals {
 ]
 
 tags = {
- "CreatedBy"    =  "ITops-GIT-Pipeline
+ "CreatedBy"    =  "GIT-Pipeline
  "CreatedOn"    =  formatdate("MM/DD/YYYY", timestamp())
  "DeploymentType" = "Terraform"
  "Environment"   = local.environment == "prod" ? "Production"  : local.environment == "nonprod" ? "Non-Prrodution" : title(local.environment)
