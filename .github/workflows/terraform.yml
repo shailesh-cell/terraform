@@ -24,7 +24,7 @@ jobs:
         id: find_dirs
         run: |
           set -e
-          # Find top-level directories, excluding root and _modules
+          # Find top-level directories with .tf files, excluding _modules
           TF_DIRS=$(find . -maxdepth 1 -type d -not -path '.' -not -path './_modules' -not -path './_modules/*' | sort)
           echo "Found directories: $TF_DIRS"
           if [ -z "$TF_DIRS" ]; then
@@ -82,15 +82,13 @@ jobs:
         id: detect_changes
         run: |
           set -e
-          # For first run or manual dispatch, plan all valid dirs
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ ! -f /.github/workflows/.terraform_run ] || [ "${{ needs.find_dirs.outputs.has_dirs }}" = "true" ]; then
-            echo "Planning all valid environments."
+          # Always plan all valid dirs on first push or manual dispatch
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.run_number }}" = "1" ]; then
+            echo "Initial run or manual dispatch, planning all environments."
             JSON_MATRIX="${{ needs.find_dirs.outputs.matrix }}"
+            echo "Valid directories (initial run): $(echo "$JSON_MATRIX" | jq -r '.[].directoryPath')"
             echo "matrix=$JSON_MATRIX" >> $GITHUB_OUTPUT
             echo "has_changes=true" >> $GITHUB_OUTPUT
-            # Create flag file to mark run
-            mkdir -p /.github/workflows
-            touch /.github/workflows/.terraform_run
             exit 0
           fi
           # Detect changes
@@ -100,6 +98,7 @@ jobs:
           if [ -n "$MODULES_CHANGED" ]; then
             echo "_modules changed, planning all environments."
             JSON_MATRIX="${{ needs.find_dirs.outputs.matrix }}"
+            echo "Valid directories (_modules changed): $(echo "$JSON_MATRIX" | jq -r '.[].directoryPath')"
             echo "matrix=$JSON_MATRIX" >> $GITHUB_OUTPUT
             echo "has_changes=true" >> $GITHUB_OUTPUT
             exit 0
