@@ -62,20 +62,29 @@ jobs:
           set -e
           # Find top-level directories, excluding root and _modules
           TF_DIRS=$(find . -maxdepth 1 -type d -not -path '.' -not -path './_modules' -not -path './_modules/*' | sort)
+          echo "Found directories: $TF_DIRS"
           if [ -z "$TF_DIRS" ]; then
             echo "No Terraform environment directories found."
             echo "matrix=[]" >> $GITHUB_OUTPUT
             exit 0
           fi
-          # Validate each directory has .tf files
+          # Validate each directory
           VALID_DIRS=""
           JSON_MATRIX="["
           for dir in $TF_DIRS; do
             dir_path="${dir#./}"
+            # Skip if directory doesn't exist or is empty
+            if [ ! -d "$dir" ]; then
+              echo "Skipping $dir_path: directory does not exist"
+              continue
+            fi
             # Check for at least one .tf file directly in the directory
             if ls "$dir"/*.tf >/dev/null 2>&1; then
               VALID_DIRS="$VALID_DIRS $dir_path"
-              JSON_MATRIX+="{\"directoryPath\":\"$dir_path\"},"
+              # Sanitize dir_path for JSON
+              sanitized_path=$(echo "$dir_path" | sed 's/"/\\"/g')
+              JSON_MATRIX+="{\"directoryPath\":\"$sanitized_path\"},"
+              echo "Valid directory: $dir_path"
             else
               echo "Skipping $dir_path: no .tf files found"
             fi
@@ -88,6 +97,7 @@ jobs:
             exit 0
           fi
           echo "Valid Terraform directories: $VALID_DIRS"
+          echo "Matrix JSON: $JSON_MATRIX"
           echo "matrix=$JSON_MATRIX" >> $GITHUB_OUTPUT
         shell: bash
 
@@ -105,7 +115,12 @@ jobs:
       - name: Debug directory contents
         run: |
           echo "Processing directory: ${{ matrix.directoryPath }}"
-          ls -la "${{ matrix.directoryPath }}"
+          if [ -d "${{ matrix.directoryPath }}" ]; then
+            ls -la "${{ matrix.directoryPath }}"
+          else
+            echo "Directory ${{ matrix.directoryPath }} does not exist"
+            exit 1
+          fi
         shell: bash
 
       - name: Setup Terraform
