@@ -29,4 +29,4 @@ jobs:
           echo "Running terraform plan using dev env and shared modules"
           terraform plan \
             -var-file="dev/local.tf" \
-            -var-file="_module/global-variables/outputs.tf"
+            -var-file="_modules/global-variables/output.tf"
