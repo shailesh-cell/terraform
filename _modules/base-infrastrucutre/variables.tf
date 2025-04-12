@@ -1,7 +1,7 @@
-variable "address_space" {
-  description = "The address space for the vnet."
-  type = string
-}
+#variable "address_space" {
+  #description = "The address space for the vnet."
+  #type = string
+#}
 
 variable "environment" {
  description = "The environment name. Ex: dev, qa, stage, nonprod, or prod."
