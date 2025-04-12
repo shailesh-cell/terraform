@@ -18,7 +18,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Fetch full history to ensure origin/main is available
+          fetch-depth: 0
 
       - name: Fetch origin/main
         run: git fetch origin main
@@ -50,13 +50,33 @@ jobs:
 
   tf_plan:
     runs-on: ubuntu-latest
-    needs: check_changes
-    if: ${{ needs.check_changes.outputs.matrix != '{}' }}
-    strategy:
-      matrix: ${{ fromJson(needs.check_changes.outputs.matrix) }}
+    # needs: check_changes
+    # if: ${{ needs.check_changes.outputs.matrix != '{}' }}
+    # strategy:
+    #   matrix: ${{ fromJson(needs.check_changes.outputs.matrix) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Find all Terraform directories
+        id: find_dirs
+        run: |
+          TF_DIRS=$(find . -type f -name '*.tf' -not -path '*/_modules/*' | awk -F'/' 'NF >= 2 {print $2}' | sort | uniq)
+          if [ -z "$TF_DIRS" ]; then
+            echo "No Terraform directories found."
+            exit 1
+          fi
+          echo "Terraform directories: $TF_DIRS"
+          JSON_MATRIX="{"
+          for dir in $TF_DIRS; do
+            if [ -n "$dir" ]; then
+              JSON_MATRIX+="\"$dir\":{\"directoryPath\":\"$dir\"},"
+            fi
+          done
+          JSON_MATRIX=${JSON_MATRIX%,}
+          JSON_MATRIX+="}"
+          echo "matrix=$JSON_MATRIX" >> $GITHUB_OUTPUT
+        shell: bash
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -72,12 +92,12 @@ jobs:
 
       - name: Terraform Init
         run: terraform init
-        working-directory: ${{ matrix.directoryPath }}
+        working-directory: ${{ fromJson(steps.find_dirs.outputs.matrix)[matrix.directoryPath].directoryPath }}
 
       - name: Terraform Validate
         run: terraform validate
-        working-directory: ${{ matrix.directoryPath }}
+        working-directory: ${{ fromJson(steps.find_dirs.outputs.matrix)[matrix.directoryPath].directoryPath }}
 
       - name: Terraform Plan
         run: terraform plan
-        working-directory: ${{ matrix.directoryPath }}
+        working-directory: ${{ fromJson(steps.find_dirs.outputs.matrix)[matrix.directoryPath].directoryPath }}
