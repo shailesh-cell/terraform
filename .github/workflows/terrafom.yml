@@ -15,16 +15,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Inspect directory structure
+      - name: Inspect repository contents
         run: |
-          pwd
+          echo "Current directory: $(pwd)"
+          echo "Listing all files in workspace:"
           ls -la
+          echo "Listing terraform/_modules recursively:"
           if [ -d "terraform/_modules" ]; then
-            echo "Directory exists"
             ls -R terraform/_modules
           else
-            echo "Directory terraform/_modules does not exist"
+            echo "Directory terraform/_modules does not exist in the repository"
           fi
+          echo "Listing tracked files in repository:"
+          git ls-files terraform/_modules || echo "No files found under terraform/_modules in git"
 
       - uses: hashicorp/setup-terraform@v3
         with:
@@ -38,7 +41,13 @@ jobs:
 
       - name: Loop through each module and plan
         run: |
+          if [ ! -d "terraform/_modules" ]; then
+            echo "Error: terraform/_modules directory not found in the repository"
+            exit 1
+          fi
+          found_tf_files=false
           for dir in $(find terraform/_modules -type f -name "*.tf" -exec dirname {} \; | sort -u); do
+            found_tf_files=true
             if [ -d "$dir" ]; then
               echo "Running Terraform in $dir"
               cd "$dir"
@@ -47,6 +56,10 @@ jobs:
               terraform plan
               cd - > /dev/null
             else
-              echo "No Terraform modules found in terraform/_modules/"
+              echo "Directory $dir does not exist, skipping"
             fi
           done
+          if [ "$found_tf_files" = false ]; then
+            echo "No .tf files found in terraform/_modules/"
+            exit 1
+          fi
