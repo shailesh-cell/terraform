@@ -4,7 +4,7 @@ Description: Provider configuration
 
 #Provider Version
 terraform {
-required_providerrs {
+required_providers {
   azapi = {
     source = "Azue/azapi"
 }

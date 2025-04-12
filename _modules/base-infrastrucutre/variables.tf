@@ -8,7 +8,7 @@ variable "environment"
  #type = string
  #validation {
    #condition   = var.environment  == "dev"  || var.environment = "qa" || var.environment = "stage" || var.environment == "nonprod" || var.environment == "prod"
-error_message = "The variable environment should be dev, qa, stage, nonprod, or prod."
+#error_message = "The variable environment should be dev, qa, stage, nonprod, or prod."
 }
 }
 
