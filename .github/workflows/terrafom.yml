@@ -27,7 +27,7 @@ jobs:
 
       - name: Loop through each module and plan
         run: |
-          for dir in $(find terraform/_modules -type d -name "*.tf" -exec dirname {} \; | sort -u); do
+          for dir in $(find terraform/_modules/*/ -type d -name "*.tf" -exec dirname {} \; | sort -u); do
            if [ -d "$dir" ]; then
             echo "Running Terraform in $dir"
             cd "$dir"
