@@ -1,42 +1,31 @@
-name: Terraform Plan
+name: Terraform Plan Workflow
 
 on:
   push:
-    paths:
-      - 'dev/**'
-      - 'uat/**'
-      - 'prod/**'
-      - '_module/**'
   pull_request:
-    paths:
-      - 'dev/**'
-      - 'uat/**'
-      - 'prod/**'
-      - '_module/**'
 
 jobs:
   terraform-plan:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
 
     env:
       TF_IN_AUTOMATION: true
 
     steps:
-      - name: Checkout repository
+      - name: Checkout Code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Ensures full git history is available
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.5.7
 
-      - name: Determine environment from changed files
+      - name: Determine Environment Based on Changes
         id: env
         run: |
-          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.event.pull_request.base.ref || github.event.before }} ${{ github.sha }})
           echo "Changed files: $CHANGED_FILES"
 
           if echo "$CHANGED_FILES" | grep -q "^dev/"; then
@@ -46,14 +35,14 @@ jobs:
           elif echo "$CHANGED_FILES" | grep -q "^prod/"; then
             echo "env=prod" >> $GITHUB_OUTPUT
           else
-            echo "env=dev" >> $GITHUB_OUTPUT # default fallback
+            echo "env=dev" >> $GITHUB_OUTPUT  # default if nothing found
           fi
 
-      - name: Terraform Init and Plan
+      - name: Terraform Init & Plan
         working-directory: ./_module/base-infrastructure
         run: |
           ENV_DIR="../${{ steps.env.outputs.env }}"
-          echo "Using environment from $ENV_DIR"
+          echo "Using environment variables from: $ENV_DIR"
 
-          terraform init -backend-config="$ENV_DIR/backend.tfvars"
+          terraform init
           terraform plan -var-file="$ENV_DIR/local.tf"
