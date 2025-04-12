@@ -2,15 +2,11 @@
 Description: Provider configuration
 */
 
-Provider Version
 terraform {
-required_providers {
-  azapi = {
-    source = "Azue/azapi"
-}
-azurerem = {
- source   = "hashicorp/azurerm"
- configuragtion_aliased = [azurerm.ihub]
-}
-}
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "=3.0.0"
+    }
+  }
 }
