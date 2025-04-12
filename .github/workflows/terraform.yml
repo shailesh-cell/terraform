@@ -4,24 +4,76 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch: # Allow manual runs
+  workflow_dispatch:
 
 permissions:
   id-token: write
   contents: read
 
 jobs:
+  find_dirs:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.find_dirs.outputs.matrix }}
+      has_dirs: ${{ steps.find_dirs.outputs.has_dirs }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Find Terraform environment directories
+        id: find_dirs
+        run: |
+          set -e
+          # Find top-level directories, excluding root and _modules
+          TF_DIRS=$(find . -maxdepth 1 -type d -not -path '.' -not -path './_modules' -not -path './_modules/*' | sort)
+          echo "Found directories: $TF_DIRS"
+          if [ -z "$TF_DIRS" ]; then
+            echo "No Terraform environment directories found."
+            echo "matrix=[]" >> $GITHUB_OUTPUT
+            echo "has_dirs=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          VALID_DIRS=""
+          JSON_MATRIX="["
+          for dir in $TF_DIRS; do
+            dir_path="${dir#./}"
+            if [ ! -d "$dir" ]; then
+              echo "Skipping $dir_path: directory does not exist"
+              continue
+            fi
+            if ls "$dir"/*.tf >/dev/null 2>&1; then
+              VALID_DIRS="$VALID_DIRS $dir_path"
+              JSON_MATRIX+="{\"directoryPath\":\"$dir_path\"},"
+              echo "Valid directory: $dir_path"
+            else
+              echo "Skipping $dir_path: no .tf files found"
+            fi
+          done
+          JSON_MATRIX=${JSON_MATRIX%,}
+          JSON_MATRIX+="]"
+          if [ -z "$VALID_DIRS" ]; then
+            echo "No valid Terraform environment directories found."
+            echo "matrix=[]" >> $GITHUB_OUTPUT
+            echo "has_dirs=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          echo "Valid Terraform directories: $VALID_DIRS"
+          echo "Matrix JSON: $JSON_MATRIX"
+          echo "matrix=$JSON_MATRIX" >> $GITHUB_OUTPUT
+          echo "has_dirs=true" >> $GITHUB_OUTPUT
+        shell: bash
+
   check_changes:
     runs-on: ubuntu-latest
+    needs: find_dirs
     outputs:
       matrix: ${{ steps.detect_changes.outputs.matrix }}
       has_changes: ${{ steps.detect_changes.outputs.has_changes }}
-      modules_changed: ${{ steps.detect_changes.outputs.modules_changed }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Full history for git diff
+          fetch-depth: 0
 
       - name: Fetch origin/main
         run: git fetch origin main
@@ -30,115 +82,61 @@ jobs:
         id: detect_changes
         run: |
           set -e
-          # Check for prior runs (simplified: assume first run if no matrix output)
-          PRIOR_RUNS=$(gh run list --workflow=terraform.yml --branch=main --limit=1 --json conclusion --jq '.[0].conclusion')
-          echo "Prior runs conclusion: $PRIOR_RUNS"
-          if [ -z "$PRIOR_RUNS" ]; then
-            echo "First run detected, will plan all environments."
-            ALL_DIRS=$(find . -maxdepth 1 -type d -not -path '.' -not -path './_modules' -not -path './_modules/*' | sort)
-            VALID_DIRS=""
-            for dir in $ALL_DIRS; do
-              dir_path="${dir#./}"
-              if ls "$dir"/*.tf >/dev/null 2>&1; then
-                VALID_DIRS="$VALID_DIRS $dir_path"
-              fi
-            done
-            if [ -z "$VALID_DIRS" ]; then
-              echo "No Terraform environment directories found."
-              echo "matrix=[]" >> $GITHUB_OUTPUT
-              echo "has_changes=false" >> $GITHUB_OUTPUT
-              echo "modules_changed=false" >> $GITHUB_OUTPUT
-              exit 0
-            fi
-            JSON_MATRIX="["
-            for dir in $VALID_DIRS; do
-              sanitized_path=$(echo "$dir" | sed 's/"/\\"/g')
-              JSON_MATRIX+="{\"directoryPath\":\"$sanitized_path\"},"
-            done
-            JSON_MATRIX=${JSON_MATRIX%,}
-            JSON_MATRIX+="]"
-            echo "Valid Terraform directories (first run): $VALID_DIRS"
+          # For first run or manual dispatch, plan all valid dirs
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ ! -f /.github/workflows/.terraform_run ] || [ "${{ needs.find_dirs.outputs.has_dirs }}" = "true" ]; then
+            echo "Planning all valid environments."
+            JSON_MATRIX="${{ needs.find_dirs.outputs.matrix }}"
             echo "matrix=$JSON_MATRIX" >> $GITHUB_OUTPUT
             echo "has_changes=true" >> $GITHUB_OUTPUT
-            echo "modules_changed=false" >> $GITHUB_OUTPUT
+            # Create flag file to mark run
+            mkdir -p /.github/workflows
+            touch /.github/workflows/.terraform_run
             exit 0
           fi
-          # Normal run: detect changes
+          # Detect changes
           CHANGED_FILES=$(git diff origin/main HEAD --name-only -- '*.tf' || true)
           echo "Changed files: $CHANGED_FILES"
-          # Check if _modules changed
           MODULES_CHANGED=$(echo "$CHANGED_FILES" | grep '^_modules/' || true)
           if [ -n "$MODULES_CHANGED" ]; then
             echo "_modules changed, planning all environments."
-            ALL_DIRS=$(find . -maxdepth 1 -type d -not -path '.' -not -path './_modules' -not -path './_modules/*' | sort)
-            VALID_DIRS=""
-            for dir in $ALL_DIRS; do
-              dir_path="${dir#./}"
-              if ls "$dir"/*.tf >/dev/null 2>&1; then
-                VALID_DIRS="$VALID_DIRS $dir_path"
-              fi
-            done
-            if [ -z "$VALID_DIRS" ]; then
-              echo "No Terraform environment directories found."
-              echo "matrix=[]" >> $GITHUB_OUTPUT
-              echo "has_changes=false" >> $GITHUB_OUTPUT
-              echo "modules_changed=true" >> $GITHUB_OUTPUT
-              exit 0
-            fi
-            JSON_MATRIX="["
-            for dir in $VALID_DIRS; do
-              sanitized_path=$(echo "$dir" | sed 's/"/\\"/g')
-              JSON_MATRIX+="{\"directoryPath\":\"$sanitized_path\"},"
-            done
-            JSON_MATRIX=${JSON_MATRIX%,}
-            JSON_MATRIX+="]"
-            echo "Valid Terraform directories (_modules changed): $VALID_DIRS"
+            JSON_MATRIX="${{ needs.find_dirs.outputs.matrix }}"
             echo "matrix=$JSON_MATRIX" >> $GITHUB_OUTPUT
             echo "has_changes=true" >> $GITHUB_OUTPUT
-            echo "modules_changed=true" >> $GITHUB_OUTPUT
             exit 0
           fi
-          # Check environment-specific changes
           CHANGED_DIRS=$(echo "$CHANGED_FILES" | awk -F'/' 'NF >= 1 {print $1}' | sort | uniq | grep -v '^_modules' || true)
           echo "Changed directories: $CHANGED_DIRS"
-          if [ -z "$CHANGED_FILES" ] || [ -z "$CHANGED_DIRS" ]; then
-            echo "No Terraform changes detected."
+          if [ -z "$CHANGED_DIRS" ]; then
+            echo "No changes detected."
             echo "matrix=[]" >> $GITHUB_OUTPUT
             echo "has_changes=false" >> $GITHUB_OUTPUT
-            echo "modules_changed=false" >> $GITHUB_OUTPUT
             exit 0
           fi
           VALID_DIRS=""
+          JSON_MATRIX="["
           for dir in $CHANGED_DIRS; do
             if [ -d "$dir" ] && ls "$dir"/*.tf >/dev/null 2>&1; then
               VALID_DIRS="$VALID_DIRS $dir"
+              JSON_MATRIX+="{\"directoryPath\":\"$dir\"},"
             fi
-          done
-          if [ -z "$VALID_DIRS" ]; then
-            echo "No valid Terraform environment directories changed."
-            echo "matrix=[]" >> $GITHUB_OUTPUT
-            echo "has_changes=false" >> $GITHUB_OUTPUT
-            echo "modules_changed=false" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-          JSON_MATRIX="["
-          for dir in $VALID_DIRS; do
-            sanitized_path=$(echo "$dir" | sed 's/"/\\"/g')
-            JSON_MATRIX+="{\"directoryPath\":\"$sanitized_path\"},"
           done
           JSON_MATRIX=${JSON_MATRIX%,}
           JSON_MATRIX+="]"
-          echo "Valid Terraform directories (env changes): $VALID_DIRS"
+          if [ -z "$VALID_DIRS" ]; then
+            echo "No valid directories changed."
+            echo "matrix=[]" >> $GITHUB_OUTPUT
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          echo "Valid directories (env changes): $VALID_DIRS"
+          echo "Matrix JSON: $JSON_MATRIX"
           echo "matrix=$JSON_MATRIX" >> $GITHUB_OUTPUT
           echo "has_changes=true" >> $GITHUB_OUTPUT
-          echo "modules_changed=false" >> $GITHUB_OUTPUT
         shell: bash
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   tf_plan:
     runs-on: ubuntu-latest
-    needs: check_changes
+    needs: [find_dirs, check_changes]
     if: ${{ needs.check_changes.outputs.has_changes == 'true' }}
     strategy:
       matrix:
