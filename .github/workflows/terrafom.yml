@@ -73,15 +73,14 @@ jobs:
           JSON_MATRIX="["
           for dir in $TF_DIRS; do
             dir_path="${dir#./}"
-            # Skip if directory doesn't exist or is empty
+            # Skip if directory doesn't exist
             if [ ! -d "$dir" ]; then
               echo "Skipping $dir_path: directory does not exist"
               continue
             fi
-            # Check for at least one .tf file directly in the directory
+            # Check for at least one .tf file
             if ls "$dir"/*.tf >/dev/null 2>&1; then
               VALID_DIRS="$VALID_DIRS $dir_path"
-              # Sanitize dir_path for JSON
               sanitized_path=$(echo "$dir_path" | sed 's/"/\\"/g')
               JSON_MATRIX+="{\"directoryPath\":\"$sanitized_path\"},"
               echo "Valid directory: $dir_path"
@@ -111,6 +110,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Debug matrix input
+        run: |
+          echo "Matrix input: ${{ toJson(matrix) }}"
+          echo "Current directoryPath: ${{ matrix.directoryPath }}"
+        shell: bash
 
       - name: Debug directory contents
         run: |
