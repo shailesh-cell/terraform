@@ -15,6 +15,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Inspect directory structure
+        run: |
+          pwd
+          ls -la
+          if [ -d "terraform/_modules" ]; then
+            echo "Directory exists"
+            ls -R terraform/_modules
+          else
+            echo "Directory terraform/_modules does not exist"
+          fi
+
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: latest
@@ -27,15 +38,15 @@ jobs:
 
       - name: Loop through each module and plan
         run: |
-          for dir in $(find terraform/_modules/*/ -type d -name "*.tf" -exec dirname {} \; | sort -u); do
-           if [ -d "$dir" ]; then
-            echo "Running Terraform in $dir"
-            cd "$dir"
-            terraform init
-            terraform validate
-            terraform plan
-            cd - > /dev/null
-           else
-            echo "No modules found in terraform/_modules/"
-           fi
+          for dir in $(find terraform/_modules -type f -name "*.tf" -exec dirname {} \; | sort -u); do
+            if [ -d "$dir" ]; then
+              echo "Running Terraform in $dir"
+              cd "$dir"
+              terraform init
+              terraform validate
+              terraform plan
+              cd - > /dev/null
+            else
+              echo "No Terraform modules found in terraform/_modules/"
+            fi
           done
