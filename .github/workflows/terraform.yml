@@ -11,6 +11,35 @@ permissions:
   contents: read
 
 jobs:
+  check_tf_files:
+    runs-on: ubuntu-latest
+    outputs:
+      tf_files: ${{ steps.list_tf_files.outputs.tf_files }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: List all .tf files
+        id: list_tf_files
+        run: |
+          set -e
+          # Find all .tf files in the repository
+          TF_FILES=$(find . -type f -name '*.tf' | sort)
+          echo "Found .tf files:"
+          if [ -z "$TF_FILES" ]; then
+            echo "No .tf files found in repository."
+            echo "tf_files=[]" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          # Print each file for debugging
+          echo "$TF_FILES" | while read -r file; do
+            echo "- $file"
+          done
+          # Convert to JSON array for output
+          JSON_FILES=$(echo "$TF_FILES" | jq -R . | jq -s .)
+          echo "tf_files=$JSON_FILES" >> $GITHUB_OUTPUT
+        shell: bash
+
   find_dirs:
     runs-on: ubuntu-latest
     outputs:
@@ -24,7 +53,6 @@ jobs:
         id: find_dirs
         run: |
           set -e
-          # Find top-level directories with .tf files, excluding _modules
           TF_DIRS=$(find . -maxdepth 1 -type d -not -path '.' -not -path './_modules' -not -path './_modules/*' | sort)
           echo "Found directories: $TF_DIRS"
           if [ -z "$TF_DIRS" ]; then
@@ -82,7 +110,7 @@ jobs:
         id: detect_changes
         run: |
           set -e
-          # Always plan all valid dirs on first push or manual dispatch
+          # Plan all valid dirs on manual dispatch or first run
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.run_number }}" = "1" ]; then
             echo "Initial run or manual dispatch, planning all environments."
             JSON_MATRIX="${{ needs.find_dirs.outputs.matrix }}"
@@ -135,8 +163,8 @@ jobs:
 
   tf_plan:
     runs-on: ubuntu-latest
-    needs: [find_dirs, check_changes]
-    if: ${{ needs.check_changes.outputs.has_changes == 'true' }}
+    needs: [check_tf_files, find_dirs, check_changes]
+    if: ${{ needs.find_dirs.outputs.has_dirs == 'true' }}
     strategy:
       matrix:
         directoryPath: ${{ fromJson(needs.check_changes.outputs.matrix) }}
@@ -148,6 +176,7 @@ jobs:
         run: |
           echo "Matrix input: ${{ toJson(matrix) }}"
           echo "Current directoryPath: ${{ matrix.directoryPath }}"
+          echo "Checked .tf files: ${{ needs.check_tf_files.outputs.tf_files }}"
         shell: bash
 
       - name: Debug directory contents
