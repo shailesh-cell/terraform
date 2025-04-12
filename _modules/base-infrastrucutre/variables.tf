@@ -17,7 +17,7 @@ variable "location" {
  type = string
  default = "primary"
  validation {
-   condition   = var.location  == "primary"  || var.location = "secondary" 
+   condition   = var.location  == "primary"  || var.location == "secondary" 
    error_message = "The variable location should be primary, or secondary."
 }
 }
