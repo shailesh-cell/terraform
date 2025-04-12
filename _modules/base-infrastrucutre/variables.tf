@@ -3,16 +3,16 @@ variable "address_space" {
   type = string
 }
 
-variable "environment"
- #description = "The environment name. Ex: dev, qa, stage, nonprod, or prod."
- #type = string
- #validation {
-   #condition   = var.environment  == "dev"  || var.environment = "qa" || var.environment = "stage" || var.environment == "nonprod" || var.environment == "prod"
-#error_message = "The variable environment should be dev, qa, stage, nonprod, or prod."
+variable "environment" {
+ description = "The environment name. Ex: dev, qa, stage, nonprod, or prod."
+ type = string
+ validation {
+   condition   = var.environment  == "dev"  || var.environment = "qa" || var.environment = "stage" || var.environment == "nonprod" || var.environment == "prod"
+error_message = "The variable environment should be dev, qa, stage, nonprod, or prod."
 }
 }
 
-variable "location"
+variable "location" {
  description = "Location name."
  type = string
  default = "primary"
@@ -22,7 +22,7 @@ variable "location"
 }
 }
 
-variable "product"
+variable "product" {
  description = "The product short name. Ex: ihub, ahub, rxrs, eor, cpsa, cpst, or cpso"
  type = string
  default = "primary"

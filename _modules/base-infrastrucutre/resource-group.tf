@@ -11,4 +11,4 @@ resource "azurerm_resource_group" "rg" {
  lifecycle {
   ignore_changes  = [tags]
  }
-{
+}
