@@ -29,7 +29,7 @@ jobs:
           set -e
           CHANGED_FILES=$(git diff origin/main HEAD --name-only -- '*.tf' || true)
           echo "Changed files: $CHANGED_FILES"
-          CHANGED_DIRS=$(echo "$CHANGED_FILES" | grep -v '^_modules' | awk -F'/' 'NF >= 1 {print $1}' | sort | uniq)
+          CHANGED_DIRS=$(echo "$CHANGED_FILES" | awk -F'/' 'NF >= 1 {print $1}' | sort | uniq)
           echo "Changed directories (pre-filter): $CHANGED_DIRS"
           if [ -z "$CHANGED_DIRS" ]; then
             echo "No Terraform changes detected."
@@ -57,39 +57,34 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Find all Terraform directories
+      - name: Find Terraform environment directories
         id: find_dirs
         run: |
           set -e
-          # Find directories containing .tf files, excluding _modules
-          TF_DIRS=$(find . -type f -name '*.tf' -not -path '*/_modules/*' | sed 's|/[^/]*$||' | sort | uniq)
+          # Find directories with .tf files, excluding _modules and root
+          TF_DIRS=$(find . -maxdepth 1 -type d -not -path '.' -not -path './_modules' -not -path './_modules/*' | sort)
           if [ -z "$TF_DIRS" ]; then
-            echo "No Terraform directories found."
+            echo "No Terraform environment directories found."
             echo "matrix=[]" >> $GITHUB_OUTPUT
             exit 0
           fi
-          # Validate each directory has a main.tf or similar
+          # Validate each directory has .tf files
           VALID_DIRS=""
           JSON_MATRIX="["
           for dir in $TF_DIRS; do
-            # Convert ./dir to dir, ./ to .
-            if [ "$dir" = "." ]; then
-              dir_path="."
-            else
-              dir_path="${dir#./}"
-            fi
+            dir_path="${dir#./}"
             # Check for at least one .tf file directly in the directory
             if ls "$dir"/*.tf >/dev/null 2>&1; then
               VALID_DIRS="$VALID_DIRS $dir_path"
               JSON_MATRIX+="{\"directoryPath\":\"$dir_path\"},"
             else
-              echo "Skipping $dir_path: no .tf files directly in directory"
+              echo "Skipping $dir_path: no .tf files found"
             fi
           done
           JSON_MATRIX=${JSON_MATRIX%,}
           JSON_MATRIX+="]"
           if [ -z "$VALID_DIRS" ]; then
-            echo "No valid Terraform directories found."
+            echo "No valid Terraform environment directories found."
             echo "matrix=[]" >> $GITHUB_OUTPUT
             exit 0
           fi
