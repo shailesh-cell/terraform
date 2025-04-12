@@ -18,12 +18,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Needed for git diff to compare with origin/main
+          fetch-depth: 0 # Fetch full history to ensure origin/main is available
+
+      - name: Fetch origin/main
+        run: git fetch origin main
 
       - name: Detect Terraform changes
         id: detect_changes
         run: |
-          CHANGED_DIRS=$(git diff origin/main HEAD --name-only -- '*.tf' | grep -v '^_modules' | awk -F'/' 'NF > 1 {print $1}' | sort | uniq)
+          set -e
+          CHANGED_FILES=$(git diff origin/main HEAD --name-only -- '*.tf' || true)
+          echo "Changed files: $CHANGED_FILES"
+          CHANGED_DIRS=$(echo "$CHANGED_FILES" | grep -v '^_modules' | awk -F'/' 'NF >= 1 {print $1}' | sort | uniq)
+          echo "Changed directories (pre-filter): $CHANGED_DIRS"
           if [ -z "$CHANGED_DIRS" ]; then
             echo "No Terraform changes detected."
             echo "matrix={}" >> $GITHUB_OUTPUT
@@ -31,7 +38,9 @@ jobs:
           fi
           JSON_MATRIX="{"
           for dir in $CHANGED_DIRS; do
-            JSON_MATRIX+="\"$dir\":{\"directoryPath\":\"$dir\"},"
+            if [ -n "$dir" ]; then
+              JSON_MATRIX+="\"$dir\":{\"directoryPath\":\"$dir\"},"
+            fi
           done
           JSON_MATRIX=${JSON_MATRIX%,}
           JSON_MATRIX+="}"
