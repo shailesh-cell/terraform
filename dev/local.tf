@@ -20,9 +20,11 @@ locals {
     CreatedBy      = "GIT-Pipeline"
     CreatedOn      = formatdate("MM/DD/YYYY", timestamp())
     DeploymentType = "Terraform"
-    Environment    = local.environment == "prod" ? "Production" :
+    Environment    = (
+                     local.environment == "prod" ? "Production" :
                      local.environment == "nonprod" ? "Non-Production" :
                      title(local.environment)
+                    )
     Product        = upper(local.product)
   }
 }
