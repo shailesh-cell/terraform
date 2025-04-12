@@ -22,3 +22,5 @@ tags = {
  "DeploymentType" = "Terraform"
  "Environment"   = local.environment == "prod" ? "Production"  : local.environment == "nonprod" ? "Non-Prrodution" : title(local.environment)
  "Product"       = upper(local.product)
+}
+}
