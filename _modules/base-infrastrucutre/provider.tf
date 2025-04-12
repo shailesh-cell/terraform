@@ -2,7 +2,7 @@
 Description: Provider configuration
 */
 
-#Provider Version
+Provider Version
 terraform {
 required_providers {
   azapi = {
