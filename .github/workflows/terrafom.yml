@@ -50,10 +50,9 @@ jobs:
 
   tf_plan:
     runs-on: ubuntu-latest
-    # needs: check_changes
-    # if: ${{ needs.check_changes.outputs.matrix != '{}' }}
-    # strategy:
-    #   matrix: ${{ fromJson(needs.check_changes.outputs.matrix) }}
+    strategy:
+      matrix:
+        directoryPath: ${{ fromJson(steps.find_dirs.outputs.matrix) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -61,21 +60,47 @@ jobs:
       - name: Find all Terraform directories
         id: find_dirs
         run: |
-          TF_DIRS=$(find . -type f -name '*.tf' -not -path '*/_modules/*' | awk -F'/' 'NF >= 2 {print $2}' | sort | uniq)
+          set -e
+          # Find directories containing .tf files, excluding _modules
+          TF_DIRS=$(find . -type f -name '*.tf' -not -path '*/_modules/*' | sed 's|/[^/]*$||' | sort | uniq)
           if [ -z "$TF_DIRS" ]; then
             echo "No Terraform directories found."
-            exit 1
+            echo "matrix=[]" >> $GITHUB_OUTPUT
+            exit 0
           fi
-          echo "Terraform directories: $TF_DIRS"
-          JSON_MATRIX="{"
+          # Validate each directory has a main.tf or similar
+          VALID_DIRS=""
+          JSON_MATRIX="["
           for dir in $TF_DIRS; do
-            if [ -n "$dir" ]; then
-              JSON_MATRIX+="\"$dir\":{\"directoryPath\":\"$dir\"},"
+            # Convert ./dir to dir, ./ to .
+            if [ "$dir" = "." ]; then
+              dir_path="."
+            else
+              dir_path="${dir#./}"
+            fi
+            # Check for at least one .tf file directly in the directory
+            if ls "$dir"/*.tf >/dev/null 2>&1; then
+              VALID_DIRS="$VALID_DIRS $dir_path"
+              JSON_MATRIX+="{\"directoryPath\":\"$dir_path\"},"
+            else
+              echo "Skipping $dir_path: no .tf files directly in directory"
             fi
           done
           JSON_MATRIX=${JSON_MATRIX%,}
-          JSON_MATRIX+="}"
+          JSON_MATRIX+="]"
+          if [ -z "$VALID_DIRS" ]; then
+            echo "No valid Terraform directories found."
+            echo "matrix=[]" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          echo "Valid Terraform directories: $VALID_DIRS"
           echo "matrix=$JSON_MATRIX" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Debug directory contents
+        run: |
+          echo "Processing directory: ${{ matrix.directoryPath }}"
+          ls -la "${{ matrix.directoryPath }}"
         shell: bash
 
       - name: Setup Terraform
@@ -92,12 +117,12 @@ jobs:
 
       - name: Terraform Init
         run: terraform init
-        working-directory: ${{ fromJson(steps.find_dirs.outputs.matrix)[matrix.directoryPath].directoryPath }}
+        working-directory: ${{ matrix.directoryPath }}
 
       - name: Terraform Validate
         run: terraform validate
-        working-directory: ${{ fromJson(steps.find_dirs.outputs.matrix)[matrix.directoryPath].directoryPath }}
+        working-directory: ${{ matrix.directoryPath }}
 
       - name: Terraform Plan
         run: terraform plan
-        working-directory: ${{ fromJson(steps.find_dirs.outputs.matrix)[matrix.directoryPath].directoryPath }}
+        working-directory: ${{ matrix.directoryPath }}
