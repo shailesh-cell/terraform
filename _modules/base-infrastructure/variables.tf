@@ -25,7 +25,7 @@ variable "location" {
 variable "product" {
  description = "The product short name."
  type = string
- default = "primary"
+ default = "myproduct"
  validation {
    condition   = var.product  == "iproduct"  || var.product == "iproduct" || var.product == "rproduct" || var.product == "eproduct" || var.product == "cproduct"  || var.product == "dproduct" || var.product == "myproduct"
    error_message = "The variable product should be."
