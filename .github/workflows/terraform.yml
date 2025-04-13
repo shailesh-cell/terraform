@@ -13,6 +13,9 @@ permissions:
 jobs:
   terraform:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dev  # Change this to "uat" or "prod" if needed
 
     steps:
       - name: Checkout repo
@@ -33,4 +36,3 @@ jobs:
           ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
         run: terraform plan
-        working-directory: dev
