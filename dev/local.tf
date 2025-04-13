@@ -1,5 +1,6 @@
 module "globals" {
  source = "../_modules/global-variables"
+}
 
 locals {
  address_space = "10.101.12.0/22"
@@ -26,5 +27,4 @@ locals {
                     )
     Product        = upper(local.product)
   }
-}
 }
