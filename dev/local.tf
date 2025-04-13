@@ -23,4 +23,3 @@ locals {
                     )
     Product        = upper(local.product)
   }
-}
