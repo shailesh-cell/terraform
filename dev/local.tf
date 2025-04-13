@@ -1,4 +1,4 @@
-module "globals" {
+module "globals_var" {
   source = "../_modules/global-variables"
 
 locals {
