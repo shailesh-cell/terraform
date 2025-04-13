@@ -1,4 +1,4 @@
-locals {
+local {
   environment     = "dev"
   address_space   = "10.101.12.0/22"
   product         = "myproduct"
