@@ -9,7 +9,7 @@ module "globals" {
 module "base_infra" {
   source   = "../_modules/base-infrastructure"
   for_each = toset(local.resource_groups)
-  resource_groups = "$(var.product)-$(var.environment)-$(each.value)-rg-${module.globals.regions["primary"]}"
+  resource_groups = "$(var.product)-$(var.environment)-rg-${module.globals.regions["primary"]}"
   environment = local.environment
   location    = local.location
   tags     = local.tags

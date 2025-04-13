@@ -37,6 +37,12 @@ variable "resource_groups" {
  type = list(string)
 }
 
+variable "resource_types" {
+ description = "list of resource"
+ type = list(string)
+ default = []
+}
+
 variable "tags" {
  description = "Tags to associate."
  type = map(string)
