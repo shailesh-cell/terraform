@@ -1,9 +1,3 @@
-provider "azurerm" {
-  features {}
-
-  use_oidc = true
-}
-
 module "globals" {
   source = "../_modules/global-variables"
 }
