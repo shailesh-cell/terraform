@@ -13,6 +13,4 @@ terraform {
 
 provider "azurerm" {
   features {}
-  # OIDC-based authentication
-  use_oidc = true
 }
