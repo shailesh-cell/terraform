@@ -11,6 +11,7 @@ locals {
  "security",
  "vm"
 ]
+}
 
   tags = {
     CreatedBy      = "GIT-Pipeline"
