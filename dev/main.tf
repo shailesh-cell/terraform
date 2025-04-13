@@ -1,7 +1,3 @@
-module "globals" {
-  source = "../_modules/global-variables"
-}
-
 module "base_infra" {
   source   = "../_modules/base-infrastructure"
   resource_group_name = "{local.product}-${local.environment}-data-rg-${module.globals.regions["primary"]}"
