@@ -11,3 +11,4 @@ module "global_vars" {
 module "base_infra" {
   source   = "../_modules/base-infrastructure"
   for_each = toset(local.resource_groups)
+}
