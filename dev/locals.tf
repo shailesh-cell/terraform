@@ -1,4 +1,4 @@
-local {
+locals {
   environment     = "dev"
   address_space   = "10.101.12.0/22"
   product         = "myproduct"
@@ -11,7 +11,7 @@ local {
     "security",
     "vm"
   ]
-    location                = "East US"
+  location = "East US"
 
   tags = {
     CreatedBy      = "GIT-Pipeline"
@@ -22,6 +22,6 @@ local {
       local.environment == "uat" ? "Non-Production" :
       title(local.environment)
     )
-    Product        = upper(local.product)
+    Product = upper(local.product)
   }
 }
