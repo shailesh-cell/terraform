@@ -21,11 +21,10 @@ jobs:
         with:
           terraform_version: 1.5.7
 
-      - name: Terraform Init
+      - name: Terraform Init (dev)
+        working-directory: dev
         run: terraform init
 
       - name: Terraform Plan (dev)
-        run: |
-          echo "Running terraform plan using dev env and shared modules"
-          terraform plan \
-            -var-file="dev/locals.tf" \
+        working-directory: dev
+        run: terraform plan
