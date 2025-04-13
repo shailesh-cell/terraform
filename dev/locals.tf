@@ -11,7 +11,7 @@ locals {
     "security",
     "vm"
   ]
-  location = "East US"
+  location = "primary"
 
   tags = {
     CreatedBy      = "GIT-Pipeline"

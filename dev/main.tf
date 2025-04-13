@@ -2,6 +2,10 @@ provider "azurerm" {
   features {}
 }
 
+module "globals" {
+  source = "../_modules/global-variables"
+}
+
 module "base_infra" {
   source   = "../_modules/base-infrastructure"
   for_each = toset(local.resource_groups)

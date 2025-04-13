@@ -23,12 +23,12 @@ variable "location" {
 }
 
 variable "product" {
- description = "The product short name. Ex: ihub, ahub, rxrs, eor, cpsa, cpst, or cpso"
+ description = "The product short name."
  type = string
  default = "primary"
  validation {
-   condition   = var.product  == "ihub"  || var.product == "ahub" || var.product == "rxrs" || var.product == "eor" || var.product == "cpsa"  || var.product == "cpst" || var.product == "cpso"
-   error_message = "The variable product should be ihub, ahub, rxrs, eor, cpsa, cpst, cpso."
+   condition   = var.product  == "iproduct"  || var.product == "iproduct" || var.product == "rproduct" || var.product == "eproduct" || var.product == "cproduct"  || var.product == "dproduct" || var.product == "myproduct"
+   error_message = "The variable product should be."
 }
 }
 
