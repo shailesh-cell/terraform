@@ -34,7 +34,7 @@ variable "product" {
 
 variable "resource_groups" {
  description = "List of short names to build resouce groups."
- type = list(string)
+ type = string
 }
 
 variable "resource_types" {
