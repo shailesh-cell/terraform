@@ -4,8 +4,9 @@ module "globals" {
 
 module "base_infra" {
   source   = "../_modules/base-infrastructure"
-  resource_groups = "$(var.product)-$(var.environment)-rg"
+  resource_group_name = "{local.product}-${local.environment}-data-rg-${module.globals.regions["primary"]}"
   environment = local.environment
-  location    = local.location
+  location    = "primary"
+  product    = local.product
   tags     = local.tags
 }
