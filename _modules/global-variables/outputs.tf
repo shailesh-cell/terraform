@@ -9,3 +9,5 @@ output "regions" {
   value = {
     "primary"   = "eus"
     "secondary" = "wus2"
+}
+}
