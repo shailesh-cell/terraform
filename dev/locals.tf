@@ -1,3 +1,7 @@
+module "globals" {
+  source = "../_modules/global-variables"
+}
+
 locals {
   environment     = "dev"
   address_space   = "10.101.12.0/22"
