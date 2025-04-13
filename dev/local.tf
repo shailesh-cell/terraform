@@ -1,5 +1,6 @@
-module "globals_var" {
+module "globals" {
   source = "../_modules/global-variables"
+}
 
 locals {
   environment     = "dev"
