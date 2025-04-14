@@ -48,5 +48,11 @@ variable "tags" {
  type = map(string)
 }
 
+variable "subnets" {
+ description = "Map of subnets."
+ type = map(string)
+}
+
+
 
 
