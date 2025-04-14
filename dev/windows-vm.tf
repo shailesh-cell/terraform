@@ -5,6 +5,6 @@ module "windows_vm" {
   location    = "primary"
   product    = local.product
   address_space = local.address_space
-  subnet        = local.subnet
+  subnets        = local.subnet
   tags     = local.tags
 }
