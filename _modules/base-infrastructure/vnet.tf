@@ -1,5 +1,5 @@
 resource "azurerm_virtual_network" "vnet" {
-  name                = "${var.product}-${var.environment}-vnet-${module.globals.regions[var.location]}"
+  name                = "${var.product}-${var.environment}-${module.globals.regions[var.location]}-vnet"
   address_space       = split(",", var.address_space)
   location            = module.globals.locations[var.location]
   resource_group_name = azurerm_resource_group.rg["network"].name

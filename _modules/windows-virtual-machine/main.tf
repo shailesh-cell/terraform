@@ -1,6 +1,6 @@
 resource "azurerm_windows_virtual_machine" "windows_vm" {
   name                = "${var.product}-${var.environment}-${module.globals.regions[var.location]}-vm"
-  resource_group_name = ${var.product}-${var.environment}-vm-${module.globals.regions[var.location]}-rg"
+  resource_group_name = ${var.product}-${var.environment}-${each.value}-${module.globals.regions[var.location]}-rg"
   location            = module.globals.locations[var.location]
   size                = var.windows_vm_size
   admin_username      = var.admin_username #"adminuser"
