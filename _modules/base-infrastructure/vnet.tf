@@ -21,6 +21,7 @@ resource "azurerm_subnet" "subnet" {
 resource "azurerm_network_interface" "nic" {
   for_each            = var.subnets
   name                = each.key
+  location            = module.globals.locations[var.location]
   resource_group_name = azurerm_resource_group.rg["network"].name
   tags  = var.tags
   
