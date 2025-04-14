@@ -7,7 +7,7 @@ resource "azurerm_network_interface" "nic" {
   
   ip_configuration {
     name                          = "ip-conf"
-    subnet_id                     = azurerm_subnet.subnet["network"].id
+    subnet_id                     = var.subnet_id
     private_ip_address_allocation = "Dynamic"
   }
  lifecycle {

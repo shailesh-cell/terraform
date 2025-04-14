@@ -53,6 +53,17 @@ variable "subnets" {
  type = map(string)
 }
 
+variable "subnet_id" {
+  description = "Subnet ID from the network module"
+  type        = string
+  default     = null
+}
+
+variable "network_rg_name" {
+  description = "Network resource group name"
+  type        = string
+  default     = null
+}
 
 
 
