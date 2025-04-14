@@ -18,8 +18,8 @@ locals {
   location = "primary"
  
   subnets = {
-    vm  = 10.1.1.0/26
-    pe               = 10.1.2.0/24
+    vm  = "10.1.1.0/26"
+    pe               = "10.1.2.0/24"
   }
 
   tags = {
