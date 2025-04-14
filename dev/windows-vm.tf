@@ -4,9 +4,6 @@ module "windows_vm" {
   environment = local.environment
   location    = "primary"
   product    = local.product
-  windows_vm_size  = var.windows_vm_size
-  nic_id          = var.nic_id
-  admin_username  = "adminuser"
-  admin_password  = "P@$$w0rd1234!"
+  address_space = local.address_space
   tags     = local.tags
 }
