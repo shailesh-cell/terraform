@@ -1,4 +1,4 @@
-module "windows_vm" {
+module "windows_vm_vnet" {
   source   = "../_modules/base-infrastructure"
   resource_groups = ["network"]
   environment = local.environment
