@@ -1,3 +1,8 @@
+module "vnet" {
+  source   = "../_modules/base-infrastructure"
+  resource_groups = ["network"]
+}
+
 module "windows_vm" {
   source   = "../_modules/base-infrastructure"
   resource_groups = ["vm"]
@@ -8,3 +13,4 @@ module "windows_vm" {
   subnets        = local.subnets
   tags     = local.tags
 }
+
