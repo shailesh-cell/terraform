@@ -7,6 +7,6 @@ module "windows_vm" {
   windows_vm_size  = var.windows_vm_size
   nic_id          = var.nic_id
   admin_username  = "adminuser"
-  admin_password  = ""P@$$w0rd1234!""
+  admin_password  = "P@$$w0rd1234!"
   tags     = local.tags
 }
