@@ -1,6 +1,6 @@
 module "windows_vm" {
   source   = "../_modules/base-infrastructure"
-  resource_groups = ["vm"]
+  resource_groups = local.resource_groups
   environment = local.environment
   location    = "primary"
   product    = local.product
