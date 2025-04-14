@@ -4,7 +4,7 @@ module "globals" {
 
 locals {
   environment     = "dev"
-  address_space   = "10.101.12.0/22"
+  address_space   = "10.1.1.0/16"
   product         = "myproduct"
   resource_groups = [
     "app",
@@ -16,6 +16,11 @@ locals {
     "vm"
   ]
   location = "primary"
+ 
+  subnets = {
+    vm  = 10.1.1.0/26
+    pe               = 10.1.2.0/24
+  }
 
   tags = {
     CreatedBy      = "GIT-Pipeline"
