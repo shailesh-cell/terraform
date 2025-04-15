@@ -26,10 +26,6 @@ source_image_reference {
 
 ######################################################################################################################
 
-module "base_infra" {
-  source = "../_modules/base-infrastructure"
-}
-
 resource "azurerm_network_interface" "linux-nic" {
   name                = "linux-nic"
   location            = module.globals.locations["primary"]
@@ -38,7 +34,7 @@ resource "azurerm_network_interface" "linux-nic" {
 
   ip_configuration {
     name                          = "internal"
-    subnet_id                     = var.subnet_id
+    subnet_id                     = module.base_infra.subnet_id
     private_ip_address_allocation = "Dynamic"
   }
 }
