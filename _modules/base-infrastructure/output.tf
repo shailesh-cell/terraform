@@ -14,10 +14,13 @@ output "nic_id" {
   value = azurerm_network_interface.nic.id
 }
 
-
-output "subnet_id" {
-  value = azurerm_subnet.subnet.id
+output "subnet_ids" {
+  value = {
+    for name, subnet in azurerm_subnet.subnet :
+    name => subnet.id
+  }
 }
+
 
 
 
