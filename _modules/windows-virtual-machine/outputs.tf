@@ -3,6 +3,7 @@
 #  value       = azurerm.windows.virtual_machine_windows_vm.id
 #}
 
-output "windows_vm_name" {
-  value = azurerm_windows_virtual_machine.windows_vm.name
+output "vm_name" {
+  description = "Name of the virtual machine"
+  value       = var.vm_name
 }
