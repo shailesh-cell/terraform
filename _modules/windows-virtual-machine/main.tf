@@ -1,3 +1,7 @@
+module "globals" {
+  source = "../global-variables"
+}
+
 resource "azurerm_windows_virtual_machine" "windows_vm" {
   name                = "${var.product}-${var.environment}-${module.globals.regions[var.location]}-vm"
   resource_group_name = "${var.product}-${var.environment}-vm-${module.globals.regions[var.location]}-rg"
