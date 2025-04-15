@@ -86,3 +86,9 @@ variable "nic_id" {
   description = "Subnet ID from the network module"
   type        = string
 }
+
+variable "vm_name" {
+  type        = string
+  description = "The name of the VM to use in the NIC name"
+}
+
