@@ -22,4 +22,13 @@ resource "azurerm_windows_virtual_machine" "windows_vm" {
     sku       = "2016-Datacenter"
     version   = "latest"
   }
+identity {
+type = "systemAssigned"
+}
+tags = local.tags
+
+lifecycle {
+ignore_changes = [
+tags]
+}
 }

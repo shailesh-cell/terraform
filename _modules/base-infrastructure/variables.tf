@@ -27,7 +27,7 @@ variable "product" {
  type = string
  default = "myproduct"
  validation {
-   condition   = var.product  == "iproduct"  || var.product == "iproduct" || var.product == "rproduct" || var.product == "eproduct" || var.product == "cproduct"  || var.product == "dproduct" || var.product == "myproduct"
+   condition   = var.product  == "iproduct"  || var.product == "qaproduct" || var.product == "rproduct" || var.product == "eproduct" || var.product == "cproduct"  || var.product == "dproduct" || var.product == "myproduct"
    error_message = "The variable product should be."
 }
 }
