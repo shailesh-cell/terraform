@@ -34,23 +34,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Detect changes in matrix folder
+      - name: Detect changes in ${{ matrix.environment }}
         id: changes
         run: |
-          echo "Checking changes in ${{ matrix.environment }} folder..."
           git fetch origin main
-          CHANGED=$(git diff --name-only origin/main | grep "^${{ matrix.environment }}/" || true)
+          CHANGED=$(git diff --name-only origin/main HEAD | grep "^${{ matrix.environment }}/" || true)
           if [ -z "$CHANGED" ]; then
             echo "No changes in ${{ matrix.environment }}"
             echo "skip=true" >> $GITHUB_OUTPUT
           else
-            echo "Changes detected in ${{ matrix.environment }}"
+            echo "Changes detected in ${{ matrix.environment }}:"
+            echo "$CHANGED"
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Exit if no changes in matrix env
+      - name: Skip if no changes
         if: steps.changes.outputs.skip == 'true'
-        run: echo "Skipping because no changes were found in ${{ matrix.environment }}"
+        run: echo "✅ Skipping ${{ matrix.environment }} — no changes detected."
 
       - name: Setup Terraform
         if: steps.changes.outputs.skip == 'false'
