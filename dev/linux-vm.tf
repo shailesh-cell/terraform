@@ -1,6 +1,6 @@
 resource "azurerm_linux_virtual_machine" "linux_vm" {
  name = "OKLOOKDEV01"
- resource_group_name = "${local.product}-${local.environment}-vm-${module.globals.regions["primary"]}"
+ resource_group_name = "${local.product}-${local.environment}-vm-${module.globals.regions["primary"]}-rg"
  location = module.globals.locations["primary"]
  size = "Standard_E2as_v4"
  admin_username = "linuxuser"
