@@ -1,5 +1,5 @@
 module "windows_vm" {
-  source   = "../_modules/base-infrastructure"
+  source   = "../_modules/windows-virtual-machine"
   resource_groups = ["vm", "network"]
   environment = local.environment
   location    = "primary"
