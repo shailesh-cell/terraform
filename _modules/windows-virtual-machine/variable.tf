@@ -87,8 +87,8 @@ variable "nic_id" {
   type        = string
 }
 
-#variable "vm_name" {
-#  type        = string
-#  description = "The name of the VM to use in the NIC name"
-#}
+variable "vm_name" {
+  type        = string
+  description = "The name of the VM to use in the NIC name"
+}
 
