@@ -6,5 +6,4 @@ module "base_infra" {
   resource_groups = ["vm"]
   tags           = local.tags
   nic_id         = "var.nic_id"
-  resource_groups = ["vm","network"]
 }
