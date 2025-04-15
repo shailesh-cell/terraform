@@ -7,10 +7,12 @@ on:
     paths:
       - 'dev/**'
       - 'qa/**'
+      - 'stage/**'
   pull_request:
     paths:
       - 'dev/**'
       - 'qa/**'
+      - 'stage/**'
 
 permissions:
   id-token: write
@@ -35,13 +37,13 @@ jobs:
       - name: Detect changes in ${{ matrix.environment }}
         id: changes
         run: |
-          echo "Checking for changes in '${{ matrix.environment }}/'"
-          CHANGED=$(git diff --name-only ${{ github.sha }}^ ${{ github.sha }} | grep "^${{ matrix.environment }}/" || true)
+          echo "Checking changes in '${{ matrix.environment }}/' folder..."
+          CHANGED=$(git diff-tree --no-commit-id --name-only -r ${{ github.sha }} | grep "^${{ matrix.environment }}/" || true)
           if [ -z "$CHANGED" ]; then
             echo "No changes in ${{ matrix.environment }}"
             echo "skip=true" >> $GITHUB_OUTPUT
           else
-            echo "Changes detected in ${{ matrix.environment }}:"
+            echo "Changes detected:"
             echo "$CHANGED"
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
