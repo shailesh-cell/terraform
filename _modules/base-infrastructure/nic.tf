@@ -1,5 +1,5 @@
 resource "azurerm_network_interface" "nic" {
-  name                = "azurerm.windows.virtual_machine_windows_vm.name-nic"
+  name                = "{azurerm_windows_virtual_machine.windows_vm.name}-nic"
   location            = module.globals.locations[var.location]
   resource_group_name = azurerm_resource_group.rg["vm"].name
   tags  = var.tags
