@@ -3,7 +3,7 @@ module "base_infra" {
   environment  = local.environment
   subnets      = { vm = local.subnets.vm }
   address_space = local.address_space
-  resource_groups = ["vm","network"]
+  resource_groups = ["vm"]
   tags           = local.tags
   vm_name = module.windows_vm.vm_name
   
