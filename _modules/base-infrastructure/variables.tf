@@ -59,11 +59,8 @@ variable "subnet_id" {
   default     = null
 }
 
-variable "network_rg_name" {
-  description = "Network resource group name"
+variable "nic_id" {
+  description = "Subnet ID from the network module"
   type        = string
-  default     = null
 }
-
-
 
