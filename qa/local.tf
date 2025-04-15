@@ -5,7 +5,7 @@ module "globals" {
 locals {
   environment     = "qa"
   address_space   = "10.2.1.0/16"
-  product         = "uatproduct"
+  product         = "qaproduct"
   resource_groups = [
     "app",
     "backup",
