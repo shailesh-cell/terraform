@@ -92,8 +92,3 @@ variable "vm_name" {
   description = "The name of the VM to use in the NIC name"
 }
 
-variable "tags" {
-  description = "Tags to associate with the windows virtual machine"
-  type = map(string)
-}
-

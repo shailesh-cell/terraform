@@ -25,7 +25,7 @@ resource "azurerm_windows_virtual_machine" "windows_vm" {
 identity {
 type = "systemAssigned"
 }
-tags = local.tags
+tags = var.tags
 
 lifecycle {
 ignore_changes = [
