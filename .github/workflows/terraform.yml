@@ -31,7 +31,8 @@ jobs:
         id: set-matrix
         run: |
           echo "🔍 Detecting changed folders..."
-          CHANGED_FOLDERS=$(git diff-tree --no-commit-id --name-only -r ${{ github.sha }} | awk -F/ '{print $1}' | sort -u)
+          git fetch origin main
+          CHANGED_FOLDERS=$(git diff --name-only origin/main...HEAD | awk -F/ '{print $1}' | sort -u)
           MATRIX=$(echo "$CHANGED_FOLDERS" | grep -E '^(dev|qa|stage)$' | jq -R -s -c 'split("\n") | map(select(length > 0))')
           echo "Changed folders: $MATRIX"
           echo "folders=$MATRIX" >> $GITHUB_OUTPUT
