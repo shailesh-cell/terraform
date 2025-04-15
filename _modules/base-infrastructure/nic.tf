@@ -1,5 +1,5 @@
 resource "azurerm_network_interface" "nic" {
-  name                = nic-1
+  name                = "nic-1"
   location            = module.globals.locations[var.location]
   resource_group_name = azurerm_resource_group.rg["vm"].name
   tags  = var.tags
