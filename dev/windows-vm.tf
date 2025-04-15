@@ -6,6 +6,5 @@ module "windows_vm" {
   resource_groups = ["vm"]
   tags           = local.tags
   nic_id         = module.base_infra.nic_id
-  vm_name        = var.vm_name
 }
 
