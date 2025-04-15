@@ -58,3 +58,5 @@ variable "subnet_id" {
   type        = string
   default     = null
 }
+
+variable "vm_name" {}
