@@ -1,7 +1,7 @@
 module "windows_vm" {
   source   = "../_modules/windows-virtual-machine"
   environment  = local.environment
-  subnets      = ["network"]
+  subnets      = local.subnet
   address_space = local.address_space
   resource_groups = ["vm"]
   tags           = local.tags
