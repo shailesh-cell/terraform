@@ -23,7 +23,7 @@ source_image_reference {
     version   = "latest"
   }
 identity {
-type = "systemAssigned"
+type = "SystemAssigned"
 }
 tags = local.tags
 
@@ -74,7 +74,7 @@ source_image_reference {
     version   = "latest"
   }
 identity {
-type = "systemAssigned"
+type = "SystemAssigned"
 }
 tags = local.tags
 

@@ -23,7 +23,7 @@ resource "azurerm_windows_virtual_machine" "windows_vm" {
     version   = "latest"
   }
 identity {
-type = "systemAssigned"
+type = "SystemAssigned"
 }
 tags = var.tags
 
