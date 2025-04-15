@@ -19,12 +19,30 @@ permissions:
   contents: read
 
 jobs:
-  terraform:
+  generate-matrix:
     runs-on: ubuntu-latest
+    outputs:
+      folders: ${{ steps.set-matrix.outputs.folders }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
+      - name: Determine changed folders
+        id: set-matrix
+        run: |
+          echo "🔍 Detecting changed folders..."
+          CHANGED_FOLDERS=$(git diff-tree --no-commit-id --name-only -r ${{ github.sha }} | awk -F/ '{print $1}' | sort -u)
+          MATRIX=$(echo "$CHANGED_FOLDERS" | grep -E '^(dev|qa|stage)$' | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "Changed folders: $MATRIX"
+          echo "folders=$MATRIX" >> $GITHUB_OUTPUT
+
+  terraform:
+    needs: generate-matrix
+    runs-on: ubuntu-latest
+    if: needs.generate-matrix.outputs.folders != '[]'
     strategy:
       matrix:
-        environment: [dev, qa, stage]
+        environment: ${{ fromJson(needs.generate-matrix.outputs.folders) }}
 
     defaults:
       run:
@@ -34,32 +52,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Detect changes in ${{ matrix.environment }}
-        id: changes
-        run: |
-          echo "Checking changes in '${{ matrix.environment }}/' folder..."
-          CHANGED=$(git diff-tree --no-commit-id --name-only -r ${{ github.sha }} | grep "^${{ matrix.environment }}/" || true)
-          if [ -z "$CHANGED" ]; then
-            echo "No changes in ${{ matrix.environment }}"
-            echo "skip=true" >> $GITHUB_OUTPUT
-          else
-            echo "Changes detected:"
-            echo "$CHANGED"
-            echo "skip=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Skip if no changes
-        if: steps.changes.outputs.skip == 'true'
-        run: echo "✅ Skipping ${{ matrix.environment }} — no changes detected."
-
       - name: Setup Terraform
-        if: steps.changes.outputs.skip == 'false'
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.5.7
 
       - name: Azure Login (OIDC)
-        if: steps.changes.outputs.skip == 'false'
         uses: azure/login@v1
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -67,11 +65,9 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Terraform Init
-        if: steps.changes.outputs.skip == 'false'
         run: terraform init
 
       - name: Terraform Plan
-        if: steps.changes.outputs.skip == 'false'
         run: terraform plan
         env:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
