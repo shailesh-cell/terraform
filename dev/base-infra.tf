@@ -5,5 +5,4 @@ module "base_infra" {
   address_space = local.address_space
   resource_groups = ["vm"]
   tags           = local.tags
-  nic_id         = "var.nic_id"
 }
