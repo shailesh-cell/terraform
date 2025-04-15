@@ -1,3 +1,7 @@
+module "base_infra" {
+  source = "../_modules/base-infrastructure"
+}
+
 module "windows_vm" {
   source   = "../_modules/windows-virtual-machine"
   environment  = local.environment
