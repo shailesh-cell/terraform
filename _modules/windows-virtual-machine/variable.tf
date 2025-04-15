@@ -81,3 +81,8 @@ variable "subnet_id" {
   type        = string
   default     = null
 }
+
+variable "nic_id" {
+  description = "Subnet ID from the network module"
+  type        = string
+}
