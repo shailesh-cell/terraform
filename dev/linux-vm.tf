@@ -34,7 +34,7 @@ resource "azurerm_network_interface" "linux-nic" {
 
   ip_configuration {
     name                          = "internal"
-    subnet_id                     = [module.base_infra.subnet_id]
+    subnet_id                     = module.base_infra.subnet_id
     private_ip_address_allocation = "Dynamic"
   }
 }
@@ -45,7 +45,7 @@ resource "azurerm_linux_virtual_machine" "linux_vm-1" {
  location = module.globals.locations["primary"]
  size = "Standard_E2as_v4"
  admin_username = "linuxuser"
- network_interface_ids = [azurerm_network_interface.linux-nic.id,]
+ network_interface_ids = [azurerm_network_interface.linux-nic.id]
  os_disk {
  caching = "ReadWrite"
  storage_account_type = "StandardSSD_LRS"
