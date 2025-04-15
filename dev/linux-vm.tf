@@ -4,7 +4,7 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
  location = module.globals.locations["primary"]
  size = "Standard_E2as_v4"
  admin_username = "linuxuser"
- network_interface_ids = module.base_infra.nic_id
+ network_interface_ids = [module.base_infra.nic_id]
  os_disk {
  caching = "ReadWrite"
  storage_account_type = "StandardSSD_LRS"
