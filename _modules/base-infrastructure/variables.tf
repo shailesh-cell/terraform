@@ -58,8 +58,3 @@ variable "subnet_id" {
   type        = string
   default     = null
 }
-
-variable "vm_name" {
-  type        = string
-  description = "The name of the VM to use in the NIC name"
-}

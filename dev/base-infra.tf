@@ -5,5 +5,5 @@ module "base_infra" {
   address_space = local.address_space
   resource_groups = local.resource_groups
   tags           = local.tags
-  vm_name       = module.windows_vm.windows_vm_name
+  
 }
