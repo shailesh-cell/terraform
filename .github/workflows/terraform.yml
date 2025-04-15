@@ -7,12 +7,10 @@ on:
     paths:
       - 'dev/**'
       - 'qa/**'
-      - 'uat/**'
   pull_request:
     paths:
       - 'dev/**'
       - 'qa/**'
-      - 'uat/**'
 
 permissions:
   id-token: write
@@ -24,7 +22,7 @@ jobs:
 
     strategy:
       matrix:
-        environment: [dev, qa, uat]
+        environment: [dev, qa, stage]
 
     defaults:
       run:
@@ -37,8 +35,8 @@ jobs:
       - name: Detect changes in ${{ matrix.environment }}
         id: changes
         run: |
-          git fetch origin main
-          CHANGED=$(git diff --name-only origin/main HEAD | grep "^${{ matrix.environment }}/" || true)
+          echo "Checking for changes in '${{ matrix.environment }}/'"
+          CHANGED=$(git diff --name-only ${{ github.sha }}^ ${{ github.sha }} | grep "^${{ matrix.environment }}/" || true)
           if [ -z "$CHANGED" ]; then
             echo "No changes in ${{ matrix.environment }}"
             echo "skip=true" >> $GITHUB_OUTPUT
