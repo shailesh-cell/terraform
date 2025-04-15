@@ -26,6 +26,9 @@ source_image_reference {
 
 ######################################################################################################################
 
+module "base_infra" {
+  source = "../_modules/base-infrastructure"
+}
 
 resource "azurerm_network_interface" "linux-nic" {
   name                = "linux-nic"
