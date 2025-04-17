@@ -55,7 +55,7 @@ resource "azurerm_managed_disk" "managed-disk" {
 resource "azurerm_virtual_machine_data_disk_attachment" "attach-managed-disk" {
   count              = local.number_of_disks
   managed_disk_id    = azurerm_managed_disk.managed-disk.*.id[count.index]
-  virtual_machine_id = azurerm_virtual_machine.windows-vm-1.id
+  virtual_machine_id = azurerm_windows_virtual_machine.windows-vm-1.id
   lun                = 10 + count.index
   caching            = "ReadWrite"
 }
