@@ -8,7 +8,7 @@ resource "azurerm_linux_virtual_machine" "linux_vm" {
  os_disk {
  caching = "ReadWrite"
  storage_account_type = "StandardSSD_LRS"
- disk_size_gb = 30
+ disk_size_gb = 300
  }
 
    admin_ssh_key {
