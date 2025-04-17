@@ -8,6 +8,8 @@ on:
       - '_modules/**'
       - 'dev/**'
       - 'qa/**'
+      - 'stage/**'
+      - 'prod/**'
   pull_request:
     branches:
       - main
@@ -15,6 +17,8 @@ on:
       - '_modules/**'
       - 'dev/**'
       - 'qa/**'
+      - 'stage/**'
+      - 'prod/**'
 
 permissions:
   id-token: write
@@ -47,7 +51,11 @@ jobs:
         id: set-matrix
         run: |
           changed_folders=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -oE '^(_modules/[^/]+|dev|qa|stage|prod)/' | sort -u | jq -R . | jq -s .)
-          echo "matrix=$(echo $changed_folders | jq '{folders: .}')" >> $GITHUB_OUTPUT
+          if [ -z "$changed_folders" ] || [ "$changed_folders" = "[]" ]; then
+            changed_folders='[]'
+          fi
+          echo "matrix=$(echo "$changed_folders" | jq -c '{folders: .}')" >> $GITHUB_OUTPUT
+        shell: bash
 
   terraform-plan:
     needs: detect-changes
