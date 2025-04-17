@@ -5,30 +5,30 @@ on:
     branches:
       - main
     paths:
-      - 'terraform/**'
+      - '_modules/**'
+      - 'dev/**'
+      - 'qa/**'
   pull_request:
     branches:
       - main
     paths:
-      - 'terraform/**'
+      - '_modules/**'
+      - 'dev/**'
+      - 'qa/**'
 
 permissions:
   id-token: write
   contents: read
 
 jobs:
-  terraform:
+  detect-changes:
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       # Checkout the repository
       - name: Checkout code
         uses: actions/checkout@v4
-
-      # Setup Terraform
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.5.0
 
       # Get changed files
       - name: Get changed files
@@ -36,22 +36,26 @@ jobs:
         uses: tj-actions/changed-files@v45
         with:
           files: |
-            terraform/**
+            _modules/**
+            dev/**
+            qa/**
+            stage/**
+            prod/**
 
       # Dynamically detect changed folders
       - name: Set matrix for changed folders
         id: set-matrix
         run: |
-          changed_folders=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -o 'terraform/[^/]\+/' | sort -u | jq -R . | jq -s .)
+          changed_folders=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -oE '^(_modules/[^/]+|dev|qa|stage|prod)/' | sort -u | jq -R . | jq -s .)
           echo "matrix=$(echo $changed_folders | jq '{folders: .}')" >> $GITHUB_OUTPUT
 
   terraform-plan:
-    needs: terraform
-    if: needs.terraform.outputs.matrix != '{"folders":[]}'
+    needs: detect-changes
+    if: needs.detect-changes.outputs.matrix != '{"folders":[]}'
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        folder: ${{ fromJson(needs.terraform.outputs.matrix).folders }}
+        folder: ${{ fromJson(needs.detect-changes.outputs.matrix).folders }}
     defaults:
       run:
         working-directory: ${{ matrix.folder }}
