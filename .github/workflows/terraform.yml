@@ -1,76 +1,80 @@
-name: Terraform Plan
+name: Terraform Pipeline Init and Plan
 
 on:
   push:
     branches:
       - main
     paths:
-      - 'dev/**'
-      - 'qa/**'
-      - 'stage/**'
+      - '_modules/**'
   pull_request:
+    branches:
+      - main
     paths:
-      - 'dev/**'
-      - 'qa/**'
-      - 'stage/**'
+      - '_modules/**'
 
 permissions:
   id-token: write
   contents: read
 
 jobs:
-  generate-matrix:
-    runs-on: ubuntu-latest
-    outputs:
-      folders: ${{ steps.set-matrix.outputs.folders }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Determine changed folders
-        id: set-matrix
-        run: |
-          echo "🔍 Detecting changed folders..."
-          git fetch origin main
-          CHANGED_FOLDERS=$(git diff --name-only origin/main...HEAD | awk -F/ '{print $1}' | sort -u)
-          MATRIX=$(echo "$CHANGED_FOLDERS" | grep -E '^(dev|qa|stage)$' | jq -R -s -c 'split("\n") | map(select(length > 0))')
-          echo "Changed folders: $MATRIX"
-          echo "folders=$MATRIX" >> $GITHUB_OUTPUT
-
   terraform:
-    needs: generate-matrix
     runs-on: ubuntu-latest
-    if: needs.generate-matrix.outputs.folders != '[]'
-    strategy:
-      matrix:
-        environment: ${{ fromJson(needs.generate-matrix.outputs.folders) }}
-
     defaults:
       run:
-        working-directory: ${{ matrix.environment }}
+        working-directory: .
 
     steps:
+      # Checkout the repository
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
+      # Setup Terraform
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.5.7
+          terraform_version: 1.5.0
 
-      - name: Azure Login (OIDC)
-        uses: azure/login@v1
+      # Get changed files
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v45
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          files: |
+            _modules/**
 
-      - name: Terraform Init
-        run: terraform init
+      # Dynamically detect changed folders
+      - name: Set matrix for changed folders
+        id: set-matrix
+        run: |
+          changed_folders=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep -o '_modules/[^/]\+/' | sort -u | jq -R . | jq -s .)
+          echo "matrix=$(echo $changed_folders | jq '{folders: .}')" >> $GITHUB_OUTPUT
 
-      - name: Terraform Plan
-        run: terraform plan
-        env:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      # Run Terraform pipeline for each changed folder
+      - name: Terraform Workflow
+        if: steps.set-matrix.outputs.matrix != '{"folders":[]}'
+        strategy:
+          matrix:
+            folder: ${{ fromJson(steps.set-matrix.outputs.matrix).folders }}
+        defaults:
+          run:
+            working-directory: ${{ matrix.folder }}
+        steps:
+          - name: Azure Login (OIDC)
+            uses: azure/login@v2
+            with:
+              client-id: ${{ secrets.AZURE_CLIENT_ID }}
+              tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+              subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+          - name: Terraform Init
+            run: terraform init
+
+          - name: Terraform Validate
+            run: terraform validate
+
+          - name: Terraform Plan
+            run: terraform plan -out=tfplan
+            env:
+              ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+              ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+              ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
